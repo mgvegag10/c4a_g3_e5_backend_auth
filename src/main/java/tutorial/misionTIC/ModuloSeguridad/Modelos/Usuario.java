@@ -49,4 +49,11 @@ public class Usuario {
     public void setContrasena(String contrasena) {
         this.contrasena = contrasena;
     }
+
+    public String getRol() {
+        if (this.rol == null)
+            return null;
+        return this.rol.get_id();
+    }
+
 }

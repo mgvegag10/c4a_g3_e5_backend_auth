@@ -8,6 +8,8 @@ import tutorial.misionTIC.ModuloSeguridad.Modelos.Rol;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioPermiso;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioPermisosRoles;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioRol;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
 
 @CrossOrigin

@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+
 import java.util.List;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,12 +22,25 @@ public class ControladorUsuario {
     private RepositorioRol miRepositorioRol;
     @GetMapping("")
     public List<Usuario> index(){
-        return this.miRepositorioUsuario.findAll();
+        List<Usuario> users =this.miRepositorioUsuario.findAll();
+        if (users.isEmpty())
+            throw new ResponseStatusException(HttpStatus.OK,"No existen usuarios");
+        return users;
     }
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public Usuario create(@RequestBody  Usuario infoUsuario){
         infoUsuario.setContrasena(convertirSHA256(infoUsuario.getContrasena()));
+        List<Usuario> usuarios =this.miRepositorioUsuario.findAll();
+        if (infoUsuario.getContrasena()==null || infoUsuario.getSeudonimo()==null || infoUsuario.getCorreo()==null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Faltan campos por ser enviados en el body");
+
+        usuarios.forEach((n)->{
+            if(n.getSeudonimo().equals(infoUsuario.getSeudonimo()) || n.getCorreo().equals(infoUsuario.getCorreo()))
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Este pseudónimo o correo ya existe. Ingrese uno diferente");
+        });
+        //this.miRepositorioUsuario.save(infoUsuario);
+        //asignarRolAUsuario(infoUsuario.get_id(),infoUsuario.getRol());
         return this.miRepositorioUsuario.save(infoUsuario);
     }
     @GetMapping("{id}")
@@ -40,25 +54,35 @@ public class ControladorUsuario {
     @PutMapping("{id}")
     public Usuario update(@PathVariable String id,@RequestBody  Usuario infoUsuario){
         Usuario usuarioActual=this.miRepositorioUsuario.findById(id).orElse(null);
-        if (usuarioActual!=null){
-            usuarioActual.setSeudonimo(infoUsuario.getSeudonimo());
-            usuarioActual.setCorreo(infoUsuario.getCorreo());
-            usuarioActual.setContrasena(convertirSHA256(infoUsuario.getContrasena()));
-            return this.miRepositorioUsuario.save(usuarioActual);
-        }else{
-            return null;
-        }
+        List<Usuario> usuarios =this.miRepositorioUsuario.findAll();
+
+        if (usuarioActual==null)
+            throw new ResponseStatusException(HttpStatus.ACCEPTED,"El usuario no fue encontrado");
+
+        if (infoUsuario.getContrasena()==null || infoUsuario.getSeudonimo()==null || infoUsuario.getCorreo()==null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Faltan campos por ser enviados en el body");
+
+        usuarios.forEach((n)->{
+            if(n.getSeudonimo().equals(infoUsuario.getSeudonimo()) || n.getCorreo().equals(infoUsuario.getCorreo()))
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Este pseudónimo o correo ya existe. Ingrese uno diferente");
+        });
+
+        usuarioActual.setSeudonimo(infoUsuario.getSeudonimo());
+        usuarioActual.setCorreo(infoUsuario.getCorreo());
+        usuarioActual.setContrasena(convertirSHA256(infoUsuario.getContrasena()));
+        return this.miRepositorioUsuario.save(usuarioActual);
     }
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
-    /*NO SALE MENSAJE DE BORRADO CORRECTAMENTE*/
     public void delete(@PathVariable String id){
         Usuario usuarioActual=this.miRepositorioUsuario
                 .findById(id)
                 .orElse(null);
         if (usuarioActual!=null){
             this.miRepositorioUsuario.delete(usuarioActual);
-        }
+            throw new ResponseStatusException(HttpStatus.OK,"El usuario solicitado ha sido eliminado");
+        }else
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"El usuario que se quiere eliminar no existe");
     }
     /**
      * Relación (1 a n) entre rol y usuario

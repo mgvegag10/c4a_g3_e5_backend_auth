@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Permiso;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioPermiso;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -30,6 +31,8 @@ public class ControladorPermiso {
         Permiso permisoActual=this.miRepositorioPermiso
                 .findById(id)
                 .orElse(null);
+        if (permisoActual==null)
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT,"El rol que se quiere cambiar no existe");
         return permisoActual;
     }
     @PutMapping("{id}")
