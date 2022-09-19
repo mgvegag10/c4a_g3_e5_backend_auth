@@ -3,6 +3,7 @@ package tutorial.misionTIC.ModuloSeguridad.Controladores;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import tutorial.misionTIC.ModuloSeguridad.Modelos.Permiso;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Rol;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Usuario;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioRol;
@@ -32,11 +33,18 @@ public class ControladorRol {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public Rol create(@RequestBody  Rol infoRol){
-        if(infoRol.getDescripcion() != null &&
-                infoRol.getNombre()!= null)
-            return this.miRepositorioRol.save(infoRol);
-        else
+        if(infoRol.getDescripcion() == null &&
+                infoRol.getNombre()== null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Faltan campos por ser enviados en el body");
+
+        List<Rol> roles = this.miRepositorioRol.findAll();
+
+        roles.forEach((n)->{
+            if(n.getNombre().equals(infoRol.getNombre()))
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Este rol ya existe. Ingrese uno diferente");
+        });
+
+        return this.miRepositorioRol.save(infoRol);
     }
 
     @GetMapping("{id}")
@@ -53,15 +61,22 @@ public class ControladorRol {
         Rol rolActual=this.miRepositorioRol
                 .findById(id)
                 .orElse(null);
-        if (rolActual!=null){
-            if(rolActual.getNombre()!=null)
-                rolActual.setNombre(infoRol.getNombre());
-            if(rolActual.getDescripcion()!=null)
-                rolActual.setDescripcion(infoRol.getDescripcion());
-            return this.miRepositorioRol.save(rolActual);
-        }else{
-            throw new ResponseStatusException(HttpStatus.ACCEPTED,"El rol que se quiere cambiar no existe");
-        }
+        if(rolActual == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"El rol solicitado no existe");
+
+        if (infoRol.getNombre()==null || infoRol.getDescripcion()==null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"El rol solicitado no existe");
+
+        List<Rol> roles = this.miRepositorioRol.findAll();
+
+        roles.forEach((n)->{
+            if(n.getNombre().equals(infoRol.getNombre()) && !rolActual.get_id().equals(n.get_id()) )
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Este nombre de rol ya existe. Ingrese uno diferente");
+        });
+
+        rolActual.setDescripcion(infoRol.getDescripcion());
+        rolActual.setNombre(infoRol.getNombre());
+        return this.miRepositorioRol.save(rolActual);
     }
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
