@@ -4,15 +4,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Permiso;
+import tutorial.misionTIC.ModuloSeguridad.Modelos.PermisosRoles;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioPermiso;
 import org.springframework.web.server.ResponseStatusException;
+import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioPermisosRoles;
 
+import java.util.Iterator;
 import java.util.List;
 
 @CrossOrigin
 @RestController
 @RequestMapping("/permisos")
 public class ControladorPermiso {
+
+    @Autowired
+    private RepositorioPermisosRoles miRepositorioPermisoRoles;
     @Autowired
     private RepositorioPermiso miRepositorioPermiso;
 
@@ -77,7 +83,6 @@ public class ControladorPermiso {
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
-    /* NO SE MUESTRA QUE SE BORRÓ CORRECTAMENTE */
     public void delete(@PathVariable String id){
         Permiso permisoActual=this.miRepositorioPermiso
                 .findById(id)
@@ -85,6 +90,22 @@ public class ControladorPermiso {
         if (permisoActual==null)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"No se ha encontrado el permiso a eliminar");
         else {
+
+            if (permisoActual!=null){
+                List<PermisosRoles> permRol = this.miRepositorioPermisoRoles.findAll();
+
+                Iterator<PermisosRoles> iterator = permRol.iterator();
+                while (iterator.hasNext()){
+                    PermisosRoles permRolIterator = iterator.next();
+                    if(permRolIterator.getPermiso().equals(permisoActual)){
+                        this.miRepositorioPermisoRoles.delete(permRolIterator);
+                    }
+
+                }
+            }
+
+
+
             this.miRepositorioPermiso.delete(permisoActual);
             throw new ResponseStatusException(HttpStatus.OK,"Se ha eliminado el permiso solicitado");
         }

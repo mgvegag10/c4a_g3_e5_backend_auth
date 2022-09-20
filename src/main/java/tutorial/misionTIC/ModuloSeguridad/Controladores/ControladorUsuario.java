@@ -1,4 +1,5 @@
 package tutorial.misionTIC.ModuloSeguridad.Controladores;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Rol;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Usuario;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioRol;
@@ -27,21 +28,38 @@ public class ControladorUsuario {
             throw new ResponseStatusException(HttpStatus.OK,"No existen usuarios");
         return users;
     }
+
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public Usuario create(@RequestBody  Usuario infoUsuario){
-        infoUsuario.setContrasena(convertirSHA256(infoUsuario.getContrasena()));
-        List<Usuario> usuarios =this.miRepositorioUsuario.findAll();
+    public Usuario create(@RequestBody  preUser infoUsuario){
+
         if (infoUsuario.getContrasena()==null || infoUsuario.getSeudonimo()==null || infoUsuario.getCorreo()==null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Faltan campos por ser enviados en el body");
+
+        infoUsuario.setContrasena(convertirSHA256(infoUsuario.getContrasena()));
+
+        List<Usuario> usuarios =this.miRepositorioUsuario.findAll();
 
         usuarios.forEach((n)->{
             if(n.getSeudonimo().equals(infoUsuario.getSeudonimo()) || n.getCorreo().equals(infoUsuario.getCorreo()))
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Este pseudónimo o correo ya existe. Ingrese uno diferente");
         });
-        //this.miRepositorioUsuario.save(infoUsuario);
+        Usuario usuario = new Usuario(infoUsuario.getSeudonimo(),infoUsuario.getCorreo(),infoUsuario.getContrasena());
+
+        if(infoUsuario.getRol()!=null){
+            Rol rolActual=this.miRepositorioRol
+                    .findById(infoUsuario.getRol())
+                    .orElse(null);
+            if(rolActual==null){
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"El rol solicitado no existe, no se ha creado un usuario");
+            }else
+                usuario.setRol(rolActual);
+        }
+
+        //this.miRepositorioUsuario.save(usuario);
         //asignarRolAUsuario(infoUsuario.get_id(),infoUsuario.getRol());
-        return this.miRepositorioUsuario.save(infoUsuario);
+        return this.miRepositorioUsuario.save(usuario);
     }
     @GetMapping("{id}")
     public Usuario show(@PathVariable String id){
@@ -125,5 +143,51 @@ public class ControladorUsuario {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+}
+
+class preUser{
+    private String seudonimo;
+    private String correo;
+    private String contrasena;
+    private String rol;
+
+    public preUser(String seudonimo, String correo, String contrasena, String rol) {
+        this.seudonimo = seudonimo;
+        this.correo = correo;
+        this.contrasena = contrasena;
+        this.rol = rol;
+    }
+
+    public String getSeudonimo() {
+        return seudonimo;
+    }
+
+    public void setSeudonimo(String seudonimo) {
+        this.seudonimo = seudonimo;
+    }
+
+    public String getCorreo() {
+        return correo;
+    }
+
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    public String getContrasena() {
+        return contrasena;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
+    }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
     }
 }

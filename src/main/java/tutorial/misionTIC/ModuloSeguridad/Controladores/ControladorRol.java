@@ -4,18 +4,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Permiso;
+import tutorial.misionTIC.ModuloSeguridad.Modelos.PermisosRoles;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Rol;
 import tutorial.misionTIC.ModuloSeguridad.Modelos.Usuario;
+import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioPermisosRoles;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioRol;
 import org.springframework.web.server.ResponseStatusException;
 import tutorial.misionTIC.ModuloSeguridad.Repositorios.RepositorioUsuario;
 
+import java.util.Iterator;
 import java.util.List;
 
 @CrossOrigin
 @RestController
 @RequestMapping("/roles")
 public class ControladorRol {
+
+    @Autowired
+    private RepositorioPermisosRoles miRepositorioPermisoRoles;
     @Autowired
     private RepositorioRol miRepositorioRol;
 
@@ -25,6 +31,7 @@ public class ControladorRol {
     @GetMapping("")
     public List<Rol> index(){
         List<Rol> roles =this.miRepositorioRol.findAll();
+
         if(roles.isEmpty())
             throw new ResponseStatusException(HttpStatus.ACCEPTED,"No existen roles registrados");
         return roles;
@@ -86,6 +93,7 @@ public class ControladorRol {
                 .orElse(null);
 
         List<Usuario> usuarios = this.miRepositorioUsuario.findAll();
+        List<PermisosRoles> permRol = this.miRepositorioPermisoRoles.findAll();
 
         usuarios.forEach((n)->{
 
@@ -93,7 +101,16 @@ public class ControladorRol {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"El rol está asociado con uno o varios usuario, elimine o cambie los usuarios asociados a este rol");
         });
 
+
         if (rolActual!=null){
+            Iterator<PermisosRoles> iterator = permRol.iterator();
+            while (iterator.hasNext()){
+                PermisosRoles permRolIterator = iterator.next();
+                if(permRolIterator.getRol().equals(rolActual)){
+                    this.miRepositorioPermisoRoles.delete(permRolIterator);
+                }
+
+            }
             this.miRepositorioRol.delete(rolActual);
             throw new ResponseStatusException(HttpStatus.OK,"El rol solicitado ha sido eliminado");
         }else
