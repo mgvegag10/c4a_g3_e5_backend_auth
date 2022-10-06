@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.util.List;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @CrossOrigin
 @RestController
 @RequestMapping("/usuarios")
@@ -35,11 +38,17 @@ public class ControladorUsuario {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public Usuario create(@RequestBody  preUser infoUsuario){
+        Pattern pattern = Pattern
+                .compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"
+                        + "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$");
+
+        /*Validación campos no puestos*/
 
         if (infoUsuario.getContrasena()==null || infoUsuario.getSeudonimo()==null || infoUsuario.getCorreo()==null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Faltan campos por ser enviados en el body");
 
         infoUsuario.setContrasena(convertirSHA256(infoUsuario.getContrasena()));
+        /*Validación campos repetidos*/
 
         List<Usuario> usuarios =this.miRepositorioUsuario.findAll();
 
@@ -48,6 +57,13 @@ public class ControladorUsuario {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Este pseudónimo o correo ya existe. Ingrese uno diferente");
         });
         Usuario usuario = new Usuario(infoUsuario.getSeudonimo(),infoUsuario.getCorreo(),infoUsuario.getContrasena());
+
+        /*Validación correo*/
+
+        Matcher mather = pattern.matcher(infoUsuario.getCorreo());
+        if (mather.find() == false) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"El correo electronico no es valido");
+        }
 
         if(infoUsuario.getRol()!=null){
             Rol rolActual=this.miRepositorioRol
@@ -58,9 +74,6 @@ public class ControladorUsuario {
             }else
                 usuario.setRol(rolActual);
         }
-
-        //this.miRepositorioUsuario.save(usuario);
-        //asignarRolAUsuario(infoUsuario.get_id(),infoUsuario.getRol());
         return this.miRepositorioUsuario.save(usuario);
     }
     @GetMapping("{id}")

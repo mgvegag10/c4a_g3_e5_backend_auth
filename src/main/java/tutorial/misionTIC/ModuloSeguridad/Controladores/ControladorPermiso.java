@@ -38,11 +38,6 @@ public class ControladorPermiso {
         if(infoPermiso.getUrl()==null || infoPermiso.getMetodo()==null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Faltan campos por ser enviados en el body");
 
-        permisos.forEach((n)->{
-            if(n.getUrl().equals(infoPermiso.getUrl()) && n.getMetodo().equals(infoPermiso.getMetodo()))
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Esta url asociado con ese metodo ya existe. Ingrese uno diferente");
-        });
-
         return this.miRepositorioPermiso.save(infoPermiso);
     }
     @GetMapping("{id}")
